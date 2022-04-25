@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<link rel="stylesheet" media="screen and (max-width: 460px)" href="./index_mobile.css">
+	<link rel="stylesheet" media="screen and (min-width: 460px)" href="./index.css">
+</head>
+<body>
+	<div class="container-out">
+		<div class="container-in" id="container_in">
+			<div class="information-box">
+				<div class="load-button" id="load_btn">
+					<span>选择文件</span>
+				</div>
+			</div>
+			<div class="operate-box">
+				<div class="button-box">
+					<div class="upload-buttons" id="upload_btn">
+						<div 
+							class="upload-button wait-btn"
+							id="wait_btn"
+						>
+							<span>等待选择文件</span>
+						</div>
+						<div 
+							class="upload-button start-btn"
+							id="start_btn"
+						>
+							<span>开始上传</span>
+						</div>
+						<div 
+							class="upload-button uploading-btn"
+							id="uploading_btn"
+						>
+							<div class="doing-something"></div>
+							<span>正在上传...</span>
+						</div>
+						<div 
+							class="upload-button finished-btn"
+							id="finished_btn"
+						>
+							<span>上传完成</span>
+						</div>
+						<div 
+							class="upload-button testing-btn"
+							id="testing_btn"
+						>
+							<div class="doing-something"></div>
+							<span>检测中...</span>
+						</div>
+						<div 
+							class="upload-button end-btn"
+							id="end_btn"
+						>
+							<span>完成!</span>
+						</div>
+						<div 
+							class="upload-button download-btn"
+							id="download_btn"
+						>
+							<span>下载文档</span>
+						</div>
+					</div>
+				</div>
+				<div class="loading-box">
+					<div class="loading-box-in">
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+					</div>
+					<div class="loading-box-in">
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+						<div class="loading-item"></div>
+					</div>
+				</div>
+			</div>
+			<div class="show-detail" id="show_detail">
+				<svg id="arrow" t="1650631246972" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2048" width="32" height="20"><path d="M512 714.666667c-8.533333 0-17.066667-2.133333-23.466667-8.533334l-341.333333-341.333333c-12.8-12.8-12.8-32 0-44.8 12.8-12.8 32-12.8 44.8 0l320 317.866667 317.866667-320c12.8-12.8 32-12.8 44.8 0 12.8 12.8 12.8 32 0 44.8L533.333333 704c-4.266667 8.533333-12.8 10.666667-21.333333 10.666667z" p-id="2049" fill="#ffffff"></path></svg>
+			</div>
+			<div class="detail-box-out">
+				<div class="detail-box" id="detail_box">
+					<!-- <div class="detail">
+						<div class="detail-message">浏览器读取文件完成</div>
+						<div class="detail-time">2022-4-22 22:30:45</div>
+					</div> -->
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script>
+//所有组件的获取
+	let arrow = document.getElementById("arrow")
+	let upload_btn = document.getElementById("upload_btn")
+	let load_btn = document.getElementById("load_btn")
+	let wait_btn = document.getElementById("wait_btn")
+	let start_btn = document.getElementById("start_btn")
+	let uploading_btn = document.getElementById("uploading_btn")
+	let finished_btn = document.getElementById("finished_btn")
+	let testing_btn = document.getElementById("testing_btn")
+	let end_btn = document.getElementById("end_btn")
+	let download_btn = document.getElementById("download_btn")
+	let detail_box = document.getElementById("detail_box")
+	let loading_items = document.getElementsByClassName("loading-item")
+	let upload_buttons = document.getElementsByClassName("upload-button")
+//选择文件
+	let isPrepared = false
+	load_btn.onclick = ()=>{
+		isPrepared = true
+		wait_btn.setAttribute("style", "left: 100%")
+		start_btn.setAttribute("style", "left: 0%")
+		load_btn.children[0].innerText = "文件已加载"
+		addDetail("浏览器读取文件成功")
+	}
+	//没有选择文件就点击按钮
+	wait_btn.onclick = ()=>{
+		console.log("请先选择文件")
+	}
+//上传
+	let isUploading = false
+	start_btn.onclick = ()=>{
+		//状态控制， 如果正在上传就不允许再触发上传事件了
+		if(isUploading) {
+			addDetail("正在上传，不要重复点击")			
+			return 0	
+		}
+		isUploading = true
+
+
+		//正式开始上传
+		fetch('http://localhost/api/upload', {
+			method: "POST"
+		}).then(resolve => {
+			addDetail("开始上传")
+			//按钮样式移动
+			start_btn.setAttribute("style", "left: 100%")
+			uploading_btn.setAttribute("style", "left: 0%")
+			//查询上传进度
+			uploadStatus()
+		}, rejected => {
+			addDetail("请求上传失败" + rejected)
+		})
+	}
+	//轮询上传进度
+	let uploadStatus = ()=>{
+		fetch('http://localhost/api/uploadstatus',{
+			method: "POST"
+		})
+		//获得返回值, 并返回给下一个then
+		.then(resolve=>{
+			//查询请求成功
+			return resolve.text().then(success=>{
+				return success
+			})
+		}, rejected=>{
+			//查询请求失败
+			addDetail("查询上传进度失败" + rejected)
+		})
+		//根据不同的进度值执行操作
+		.then(resolve=>{
+			if(Number(resolve) < 100){
+				//展示上传
+				showUploadProgress(parseInt((resolve / 5) + 1))
+				//没完成0.8秒后再查一次
+				setTimeout(()=>{
+					uploadStatus()
+				}, 500)
+			} else {
+				//上传完成
+				addDetail("上传完成")
+				//需要立即更改的样式
+				showUploadProgress(20)
+				uploading_btn.setAttribute("style", "left: 100%")
+				finished_btn.setAttribute("style", "left: 0%")
+				isUploading = false
+				//0.5秒后再进行的操作
+				setTimeout(()=>{
+					//进度条变成空心样式
+					for(i of loading_items){
+						i.setAttribute("class", "loading-item loading-item-uploaded")
+					}
+					//调用查询检测接口
+					testStatus()
+					//按钮显示信息调整
+					finished_btn.setAttribute("style", "left: 100%")
+					testing_btn.setAttribute("style", "left: 0%")
+				}, 800)
+			}
+		}, rejected=>{
+			//查询传参失败, 这里应该不会出错不addDetail了
+			console.log(rejected)
+		})
+	}
+	//根据上传进度显示上传进度条
+	let previousItem = 0
+	let showUploadProgress = (progress)=>{
+		//本次查询的进度
+		// console.log(progress)
+		//根据进度显示上传进度条
+		for(let i = previousItem; i < progress; i++){
+			loading_items[i].setAttribute("style", "opacity: 1")
+		}
+		previousItem = progress
+	}
+
+//检查
+	//上一次查询的状态
+	let previousStatus = new Array(20)
+	previousStatus.fill(0)
+	let testStatus = ()=>{
+		fetch("http://localhost/api/teststatus", {
+			method: "POST"
+		}).then(resolve=>{
+			resolve.text().then(success=>{
+				//拿到状态对象 并转化为数组
+				let status = JSON.parse(success)
+				//统计等待中的数量
+				let waittingAmount = 0
+				for(let item of status){
+					if(item === 0){
+						waittingAmount++
+					}
+				}
+				//如果没有检查完
+				//根据信息渲染进度条
+				for(let index in status){
+					if(status[index] > 0 && previousStatus[index] !== status[index]){
+						//找到本轮查询更新的成功内容
+						loading_items[index].setAttribute("class", "loading-item loading-item-finished")
+						if(index === "13" || index === "14"){
+							//两个有返回值的状态
+							addDetail(DetailMessage[index] + `, 共${status[index]}处`)
+						} else {
+							//无返回值的状态
+							addDetail(DetailMessage[index])
+						}
+					} else if(status[index] === 0 && waittingAmount > 5){
+						//同步加载中 等待内容
+						loading_items[index].setAttribute("class", "loading-item loading-item-wait")
+						break
+					} else if(status[index] === 0 && waittingAmount <= 5){
+						//异步加载中 等待内容
+						loading_items[index].setAttribute("class", "loading-item loading-item-wait")
+					}
+				}
+				if(waittingAmount === 0){
+					addDetail("检查完成！")
+					//通知后端清空数据
+					fetch('http://localhost/api/reset',{method: "POST"})
+					afterTesting()
+				} else {
+					//保存本轮状态
+					previousStatus = status
+					//轮询
+					if(waittingAmount !== 0){
+						setTimeout(()=>{
+							testStatus()
+						},300)
+					}
+				}
+			}, error=>{
+				addDetail("检测进度数据错误" + error)
+			})
+		},rejected=>{
+			addDetail("查询检测进度失败" + rejected)
+		})
+	}
+	let afterTesting = ()=>{
+		//展示完成信息
+		testing_btn.setAttribute("style", "left: 100%")
+		end_btn.setAttribute("style", "left: 0%")
+		//展示下载按钮
+		setTimeout(()=>{
+			end_btn.setAttribute("style", "left: 100%")
+			download_btn.setAttribute("style", "left: 0%")
+		}, 700)
+	}
+//下载
+	download_btn.onclick = ()=>{
+		console.log("开始下载")
+		//重置所有状态
+		isPrepared = false
+		previousItem = 0
+		load_btn.children[0].innerText = "选择文件"
+		previousStatus.fill(0)
+		detail_box.innerHTML = ""
+		for(let item of upload_buttons){
+			item.removeAttribute("style")
+		}
+		for(let item of loading_items){
+			item.removeAttribute("style")
+			item.setAttribute("class", "loading-item")
+		}
+	}
+//详细信息
+	let showDetailBtn = document.getElementById("show_detail")
+	let container = document.getElementById("container_in")
+	let isFold = true
+	//展开详细信息
+	showDetailBtn.onclick = ()=>{
+		if(isFold){
+			container.setAttribute("style", "height: 700px")
+			arrow.setAttribute("style", "transform: rotate(180deg);")
+			isFold = false
+		} else {
+			container.setAttribute("style", "height: 500px")
+			arrow.setAttribute("style", "transform: rotate(0deg);")
+			isFold = true
+		}
+	}
+	//给其他方法的添加详细信息的接口
+	let addDetail = (message)=>{
+		let detail = document.createElement("div")
+		detail.setAttribute("class", "detail")
+		let information = document.createElement("div")
+		information.setAttribute("class", "detail-message")
+		information.innerText = message
+		let time = document.createElement("div")
+		time.setAttribute("class", "detail-time")
+		let t = new Date()
+		time.innerText = t.toLocaleDateString() + " " + t.toLocaleTimeString()
+		detail.append(information, time)
+
+		detail_box.append(detail)
+	}
+
+let DetailMessage = [
+	"正式开始",
+	"测试文件转PDF完成",
+	"读取测试文件完成",
+	"读取模板文件完成",
+	"文件标题识别完成",
+	"新建错误报告",
+	"页面布局检测完成",
+	"封面检测完成",
+	"记录封面个数",
+	"正文检测完成",
+	"页眉检测完成",
+	"页脚检测完成",
+	"页码检测完成",
+	"批注插入完成", 
+	"错误量",
+	"拼写检查1",
+	"拼写检查2",
+	"拼写检查3",
+	"拼写检查4",
+	"拼写检查5",
+]
+
+	
+</script>
+</html>

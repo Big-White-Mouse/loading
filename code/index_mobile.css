@@ -1,0 +1,27 @@
+*{
+	margin: 0;
+	padding: 0;
+}
+html{
+	height: 100%;
+}
+body{
+	height: 100%;
+	background-color: #222222;
+}
+
+/*.container-out{
+	max-width: 900px;
+	min-width: 650px;
+	height: 100%;
+	margin: 0 auto;
+
+	display: flex;
+	align-items: center;
+}
+.container-in{
+	width: 100%;
+	height: 500px;
+	margin: 0 10px;
+	background-color: pink;
+}*/
